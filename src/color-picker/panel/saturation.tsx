@@ -9,6 +9,7 @@ export default defineComponent({
 
   props: {
     ...baseProps,
+    removeGradientPoint: Function,
   },
   setup(props) {
     const baseClassName = useBaseClassName();
@@ -68,6 +69,22 @@ export default defineComponent({
       return `hsl(${props.color.hue}, 100%, 50%)`;
     });
 
+    const handleDropRemove = (event: DragEvent) => {
+      const selectedId = event.dataTransfer.getData('selectedId');
+      const points = props.color.gradientColors;
+      let pos = points.findIndex((c) => c.id === selectedId);
+      const { length } = points;
+      // 必须保证有两个点
+      if (length > 2 && pos >= 0 && pos <= length - 1) {
+        points.splice(pos, 1);
+        if (!points[pos]) {
+          // eslint-disable-next-line no-nested-ternary
+          pos = points[pos + 1] ? pos + 1 : points[pos - 1] ? pos - 1 : 0;
+        }
+        handleColorsChange(points, true);
+      }
+    };
+
     onMounted(() => {
       panelRect.width = refPanel.value.offsetWidth || SATURATION_PANEL_DEFAULT_WIDTH;
       panelRect.height = refPanel.value.offsetHeight || SATURATION_PANEL_DEFAULT_HEIGHT;
@@ -93,10 +110,11 @@ export default defineComponent({
       refPanel,
       styles,
       panelBackground,
+      handleDropRemove,
     };
   },
   render() {
-    const { baseClassName, styles, panelBackground } = this;
+    const { baseClassName, styles, panelBackground, handleDropRemove } = this;
     return (
       <div
         class={[`${baseClassName}__saturation`]}
@@ -104,6 +122,7 @@ export default defineComponent({
         style={{
           background: panelBackground,
         }}
+        onDrop={handleDropRemove}
       >
         <span class={[`${baseClassName}__thumb`]} role="slider" tabindex={0} ref="refThumb" style={styles}></span>
       </div>

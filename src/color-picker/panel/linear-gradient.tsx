@@ -2,7 +2,7 @@ import { defineComponent, onBeforeUnmount, onMounted, reactive, ref, watch } fro
 import cloneDeep from 'lodash/cloneDeep';
 import { GRADIENT_SLIDER_DEFAULT_WIDTH } from '../const';
 import { genGradientPoint, gradientColors2string, GradientColorPoint } from '../utils';
-import { InputNumber as TInputNumber } from '../../input-number';
+import { InputNumber } from '../../input-number';
 import { useBaseClassName } from '../hooks';
 import { useCommonClassName } from '../../hooks/useConfig';
 import baseProps from './base-props';
@@ -154,15 +154,12 @@ export default defineComponent({
       window.removeEventListener('contextmenu', handleEnd, false);
     };
 
-    const handleKeyup = (e: KeyboardEvent) => {
-      if (props.disabled) {
-        return;
-      }
+    const removeGradientPoint = () => {
       const points = colors.value;
       let pos = points.findIndex((c) => c.id === selectedId.value);
       const { length } = points;
       // 必须保证有两个点
-      if (DELETE_KEYS.includes(e.key.toLocaleLowerCase()) && length > 2 && pos >= 0 && pos <= length - 1) {
+      if (length > 2 && pos >= 0 && pos <= length - 1) {
         points.splice(pos, 1);
         if (!points[pos]) {
           // eslint-disable-next-line no-nested-ternary
@@ -172,6 +169,13 @@ export default defineComponent({
         handleColorsChange(points, true);
         handleSelectedIdChange(current?.id);
       }
+    };
+
+    const handleKeyup = (e: KeyboardEvent) => {
+      if (props.disabled || !DELETE_KEYS.includes(e.key.toLocaleLowerCase())) {
+        return;
+      }
+      removeGradientPoint();
     };
 
     const handleThumbBarClick = (e: MouseEvent) => {
@@ -254,6 +258,7 @@ export default defineComponent({
                     }}
                     onClick={(e: MouseEvent) => e.stopPropagation()}
                     onMousedown={() => this.handleStart(t.id)}
+                    draggable
                   >
                     <span class={['gradient-thumbs__item-inner', `${baseClassName}--bg-alpha`]}></span>
                   </li>
@@ -263,7 +268,7 @@ export default defineComponent({
           </div>
         </div>
         <div class={`${baseClassName}__gradient-degree`} title={`${degree}deg`}>
-          <TInputNumber
+          <InputNumber
             size="small"
             theme="normal"
             min={0}
